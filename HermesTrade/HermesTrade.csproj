@@ -5,13 +5,24 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
 
     <!-- NuGet Package Metadata -->
     <PackageId>HermesTrade</PackageId>
     <Version>1.0.0</Version>
-    <Authors>HermesTrader</Authors>
-    <Description>A production-ready .NET 8 backtesting engine for trading strategies on cryptocurrencies and other financial instruments.</Description>
-    <PackageTags>trading backtesting cryptocurrency finance indicators</PackageTags>
+    <Authors>Gerardo Tous Vallespir</Authors>
+    <Company>HermesTrader</Company>
+    <Copyright>Copyright © 2025 Gerardo Tous Vallespir</Copyright>
+    <Description>A production-ready .NET 8 backtesting engine for trading strategies on cryptocurrencies and other financial instruments. Includes RSI indicators, Yahoo Finance data provider, file cache, and a flexible strategy interface. Author: Gerardo Tous Vallespir · gerardotous@gmail.com · https://www.linkedin.com/in/gerardo-tous-vallespir-42491636/</Description>
+    <PackageTags>trading backtesting cryptocurrency finance indicators rsi yahoofinance dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/G3r4rd00/HermesTrader</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/G3r4rd00/HermesTrader</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
@@ -19,6 +30,10 @@
     <Compile Remove="Examples\**" />
     <EmbeddedResource Remove="Examples\**" />
     <None Remove="Examples\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
