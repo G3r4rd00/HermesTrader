@@ -96,6 +96,11 @@ public sealed class CoinbaseDataProvider : IMarketDataProvider
     private static Candle ParseCandle(JsonElement[] row)
     {
         // Coinbase candle array layout: [time, low, high, open, close, volume]
+        if (row.Length < 6)
+            throw new FormatException(
+                $"Coinbase candle row has {row.Length} element(s); expected at least 6. " +
+                "Ensure the product ID, granularity, and date range are valid.");
+
         var unixSeconds = row[0].GetInt64();
         var timestamp   = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
 

@@ -95,6 +95,11 @@ public sealed class BinanceDataProvider : IMarketDataProvider
         // [3]  low
         // [4]  close
         // [5]  volume
+        if (row.Length < 6)
+            throw new FormatException(
+                $"Binance kline row has {row.Length} element(s); expected at least 6. " +
+                "Ensure the symbol and interval are valid.");
+
         var openTimeMs = row[0].GetInt64();
         var timestamp  = DateTimeOffset.FromUnixTimeMilliseconds(openTimeMs).UtcDateTime;
 

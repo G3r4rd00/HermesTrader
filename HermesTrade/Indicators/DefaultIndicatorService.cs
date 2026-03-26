@@ -64,6 +64,7 @@ public sealed class DefaultIndicatorService : IIndicatorService
                 BollingerMiddle = ToDecimal(bbResults[i].Sma),
                 BollingerLower  = ToDecimal(bbResults[i].LowerBand),
                 ATR           = ToDecimal(atrResults[i].Atr),
+                // Ichimoku properties are already decimal? in Skender, no conversion needed
                 TenkanSen     = ichResults[i].TenkanSen,
                 KijunSen      = ichResults[i].KijunSen,
                 SenkouSpanA   = ichResults[i].SenkouSpanA,
