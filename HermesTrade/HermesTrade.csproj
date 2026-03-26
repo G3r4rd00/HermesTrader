@@ -16,6 +16,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Examples\**" />
+    <EmbeddedResource Remove="Examples\**" />
+    <None Remove="Examples\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Skender.Stock.Indicators" Version="2.6.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />

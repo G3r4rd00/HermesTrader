@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Examples/">
+    <Project Path="Examples/HermesTrade.Example/HermesTrade.Example.csproj" />
+  </Folder>
+  <Project Path="HermesTrade.csproj" />
+</Solution>
