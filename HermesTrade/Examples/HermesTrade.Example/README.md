@@ -8,7 +8,8 @@ Este proyecto de consola ilustra:
 
 - ✅ Cómo configurar un backtest con `BacktestConfig`
 - ✅ Cómo usar `SimpleStrategyExample` (estrategia basada en RSI)
-- ✅ Cómo implementar un `IMarketDataProvider` personalizado
+- ✅ Cómo usar Yahoo Finance para obtener datos históricos reales
+- ✅ Cómo implementar un `IMarketDataProvider` personalizado (MockMarketDataProvider)
 - ✅ Cómo interpretar los resultados del backtest
 
 ## Componentes
@@ -25,6 +26,9 @@ Implementación de prueba de `IMarketDataProvider` que genera datos de mercado s
 - Tendencia simulada usando una función sinusoidal
 - Volatilidad aleatoria controlada
 - Velas OHLC realistas
+
+**Nota:** El ejemplo por defecto usa datos sintéticos. Para usar datos reales de Yahoo Finance, 
+descomenta la sección correspondiente en `Program.cs`.
 
 ## Cómo ejecutar
 

@@ -29,8 +29,9 @@ El proyecto **HermesTrade.Example** demuestra cómo usar el `BacktestEngine` par
 
 ✅ Configuración completa de un backtest  
 ✅ Implementación de proveedor de datos mock  
+✅ Soporte para Yahoo Finance (datos reales gratis)  
 ✅ Uso de la estrategia RSI incluida  
-✅ Visualización de resultados detallados  
+✅ Visualización de resultados detallados
 
 ### Ejecutar desde Visual Studio
 
@@ -86,15 +87,25 @@ var config = new BacktestConfig
 
 ### Usar Datos Reales
 
-Para conectar con datos reales de exchanges:
+Para conectar con datos reales de Yahoo Finance, descomenta en `Program.cs`:
 
 ```csharp
-// Binance
-var dataProvider = new BinanceDataProvider(apiKey, apiSecret);
-
-// Coinbase
-var dataProvider = new CoinbaseDataProvider(apiKey, apiSecret);
+// Opción 2: Datos reales de Yahoo Finance (descomenta para usar)
+var cacheService = new FileCacheService("cache");
+var dataProvider = new YahooFinanceDataProvider(cacheService, Period.Daily);
 ```
+
+**Símbolos soportados:**
+- 📈 **Acciones**: "AAPL", "MSFT", "TSLA", "GOOGL", "AMZN"
+- 💰 **Crypto**: "BTC-USD", "ETH-USD", "ADA-USD", "SOL-USD"
+- 📊 **Índices**: "^GSPC" (S&P 500), "^DJI" (Dow Jones)
+- 💱 **Forex**: "EURUSD=X", "GBPUSD=X"
+
+**Ventajas:**
+- ✅ 100% gratuito, sin API key
+- ✅ Datos de alta calidad
+- ✅ Histórico de años disponible
+- ✅ Caché automático para consultas rápidas
 
 ## Próximos Pasos
 

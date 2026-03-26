@@ -3,13 +3,27 @@ using HermesTrade.Engine;
 using HermesTrade.Indicators;
 using HermesTrade.Strategies;
 using HermesTrade.Example;
+using HermesTrade.Data;
 
 Console.WriteLine("═══════════════════════════════════════════════════════════");
 Console.WriteLine("  HermesTrade - Ejemplo de BacktestEngine");
 Console.WriteLine("═══════════════════════════════════════════════════════════\n");
 
-// ── 1. Crear el proveedor de datos de ejemplo ────────────────────────────
-var dataProvider = new MockMarketDataProvider();
+// ── 1. Crear el proveedor de datos ───────────────────────────────────────
+
+
+
+// Opción 2: Datos reales de Yahoo Finance (descomenta para usar)
+var cacheService = new FileCacheService("cache");
+var dataProvider = new YahooFinanceDataProvider(cacheService);
+// Opción 1: Datos sintéticos (para pruebas rápidas)
+//var dataProvider = new MockMarketDataProvider();
+
+// Símbolos disponibles en Yahoo Finance:
+// - Acciones: "AAPL", "MSFT", "TSLA", "GOOGL", "AMZN"
+// - Crypto: "BTC-USD", "ETH-USD", "ADA-USD", "SOL-USD"
+// - Índices: "^GSPC" (S&P 500), "^DJI" (Dow Jones), "^IXIC" (Nasdaq)
+// - Forex: "EURUSD=X", "GBPUSD=X", "JPYUSD=X"
 
 // ── 2. Crear el servicio de indicadores ──────────────────────────────────
 var indicatorService = new DefaultIndicatorService();
@@ -21,8 +35,8 @@ var backtestEngine = new BacktestEngine(dataProvider, indicatorService);
 var config = new BacktestConfig
 {
     Symbol = "BTC-USD",
-    From = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-    To = new DateTime(2024, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+    From = new DateTime(2015, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+    To = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
     InitialCapital = 10_000m,
     Fees = 0.001m,  // 0.1%
     PositionSizeFraction = 1m  // Invertir 100% del capital disponible
