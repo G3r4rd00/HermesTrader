@@ -121,6 +121,7 @@ public sealed class BacktestEngine
         var completedTrades = new List<Trade>();
         var equityCurve   = new List<decimal>(candles.Count);
 
+        List<StrategyContext>  history = new List<StrategyContext>();
         for (int i = 0; i < candles.Count; i++)
         {
             var candle = candles[i];
@@ -139,7 +140,9 @@ public sealed class BacktestEngine
                 History    = candles,
             };
 
-            var signal = strategy.Evaluate(context);
+            history.Add(context);
+
+            var signal = strategy.Evaluate(history);
 
             // ── Execute signal ────────────────────────────────────────────────
 

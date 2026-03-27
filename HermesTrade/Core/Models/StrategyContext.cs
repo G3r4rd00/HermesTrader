@@ -16,4 +16,6 @@ public sealed class StrategyContext
 
     /// <summary>Full historical candle series (read-only, newest last).</summary>
     public required IReadOnlyList<Candle> History { get; init; }
+
+    public StrategyContext Prev { get; init; } = null!;
 }

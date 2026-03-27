@@ -28,8 +28,9 @@ public sealed class SimpleStrategyExample : IStrategy
     public void Initialize(IEnumerable<Candle> history) { /* no warm-up required */ }
 
     /// <inheritdoc />
-    public Signal Evaluate(StrategyContext context)
+    public Signal Evaluate(List<StrategyContext> history)
     {
+        StrategyContext context = history.Last();
         var rsi = context.Indicators.RSI;
 
         if (rsi < _oversoldThreshold && !context.Portfolio.HasOpenPosition)

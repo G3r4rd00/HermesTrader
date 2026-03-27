@@ -18,7 +18,7 @@ public interface IStrategy
     /// <summary>
     /// Evaluates the strategy for the current candle and returns a trading signal.
     /// </summary>
-    /// <param name="context">All information available at this point in time.</param>
+    /// <param name="history_contexts">All information available at this point in time, including previous contexts.</param>
     /// <returns>A <see cref="Signal"/> indicating the desired action.</returns>
-    Signal Evaluate(StrategyContext context);
+    Signal Evaluate(List<StrategyContext> history_contexts);
 }
