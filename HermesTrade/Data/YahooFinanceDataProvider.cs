@@ -108,6 +108,12 @@ public sealed class YahooFinanceDataProvider : IMarketDataProvider
                 return [];
             }
 
+            var candelNonPositiveClose = candles.FirstOrDefault(c => c.Close <= 0);
+            if (candelNonPositiveClose != null)
+            {
+                Console.WriteLine($"[Yahoo Finance] ⚠ Warning: Some candles have non-positive close prices for {yahooSymbol} {candelNonPositiveClose.Timestamp:yyyy-MM-dd}");
+            }
+
             Console.WriteLine($"[Yahoo Finance] ✓ Downloaded {candles.Count} candles");
             Console.WriteLine($"  First: {candles.First().Timestamp:yyyy-MM-dd} @ ${candles.First().Close:N2}");
             Console.WriteLine($"  Last:  {candles.Last().Timestamp:yyyy-MM-dd} @ ${candles.Last().Close:N2}");
