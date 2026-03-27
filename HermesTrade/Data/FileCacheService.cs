@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using HermesTrade.Core.Models;
 
@@ -11,6 +12,7 @@ namespace HermesTrade.Data;
 public sealed class FileCacheService
 {
     private readonly string _cacheDirectory;
+    private readonly ConcurrentDictionary<string, IReadOnlyList<Candle>> _memoryCache = new();
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -32,6 +34,7 @@ public sealed class FileCacheService
 
     /// <summary>
     /// Attempts to load cached candles.  Returns <c>null</c> when no cache entry exists.
+    /// Hits memory first; falls back to disk and populates memory on a cache miss.
     /// </summary>
     public async Task<IEnumerable<Candle>?> TryLoadAsync(
         string   provider,
@@ -40,7 +43,12 @@ public sealed class FileCacheService
         DateTime to,
         CancellationToken cancellationToken = default)
     {
-        var filePath = GetFilePath(provider, symbol, from, to);
+        var key = GetKey(provider, symbol, from, to);
+
+        if (_memoryCache.TryGetValue(key, out var cached))
+            return cached;
+
+        var filePath = Path.Combine(_cacheDirectory, $"{key}.json");
         if (!File.Exists(filePath))
             return null;
 
@@ -49,10 +57,15 @@ public sealed class FileCacheService
             .DeserializeAsync<CandleRecord[]>(stream, JsonOptions, cancellationToken)
             .ConfigureAwait(false);
 
-        return records?.Select(r => r.ToCandle());
+        if (records is null)
+            return null;
+
+        var candles = records.Select(r => r.ToCandle()).ToArray();
+        _memoryCache[key] = candles;
+        return candles;
     }
 
-    /// <summary>Persists a candle sequence to disk for the given cache key.</summary>
+    /// <summary>Persists a candle sequence to disk and memory for the given cache key.</summary>
     public async Task SaveAsync(
         string               provider,
         string               symbol,
@@ -61,31 +74,35 @@ public sealed class FileCacheService
         IEnumerable<Candle>  candles,
         CancellationToken    cancellationToken = default)
     {
-        var records  = candles.Select(CandleRecord.FromCandle).ToArray();
-        var filePath = GetFilePath(provider, symbol, from, to);
+        var key      = GetKey(provider, symbol, from, to);
+        var snapshot = candles as IReadOnlyList<Candle> ?? candles.ToArray();
+        var records  = snapshot.Select(CandleRecord.FromCandle).ToArray();
+        var filePath = Path.Combine(_cacheDirectory, $"{key}.json");
 
         await using var stream = File.Create(filePath);
         await JsonSerializer
             .SerializeAsync(stream, records, JsonOptions, cancellationToken)
             .ConfigureAwait(false);
+
+        _memoryCache[key] = snapshot;
     }
 
-    /// <summary>Removes the cache entry for a given key, if it exists.</summary>
+    /// <summary>Removes the cache entry from memory and disk, if it exists.</summary>
     public void Invalidate(string provider, string symbol, DateTime from, DateTime to)
     {
-        var filePath = GetFilePath(provider, symbol, from, to);
+        var key      = GetKey(provider, symbol, from, to);
+        var filePath = Path.Combine(_cacheDirectory, $"{key}.json");
+
+        _memoryCache.TryRemove(key, out _);
+
         if (File.Exists(filePath))
             File.Delete(filePath);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private string GetFilePath(string provider, string symbol, DateTime from, DateTime to)
-    {
-        var key      = $"{provider}_{symbol}_{from:yyyyMMdd}_{to:yyyyMMdd}".ToUpperInvariant();
-        var fileName = $"{key}.json";
-        return Path.Combine(_cacheDirectory, fileName);
-    }
+    private static string GetKey(string provider, string symbol, DateTime from, DateTime to) =>
+        $"{provider}_{symbol}_{from:yyyyMMdd}_{to:yyyyMMdd}".ToUpperInvariant();
 
     // ── DTO used only for JSON serialisation ──────────────────────────────────
 

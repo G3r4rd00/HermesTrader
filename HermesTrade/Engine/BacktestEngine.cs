@@ -21,6 +21,60 @@ public sealed class BacktestEngine
     }
 
     /// <summary>
+    /// Loads market data and pre-computes all indicators for <paramref name="config"/>
+    /// once. The result can be reused across many <see cref="Run"/> calls (e.g. inside
+    /// a genetic-algorithm fitness function) to avoid redundant I/O and computation.
+    /// </summary>
+    public async Task<PrecomputedBacktestData> PrecomputeAsync(
+        Configuration.BacktestConfig config,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+
+        var candleSeq = await _dataProvider
+            .GetHistoricalDataAsync(config.Symbol, config.From, config.To, cancellationToken)
+            .ConfigureAwait(false);
+
+        var candles = candleSeq.OrderBy(c => c.Timestamp).ToList();
+
+        _indicatorService.Initialize(candles);
+        var snapshots = (_indicatorService as Indicators.DefaultIndicatorService)
+            ?.GetAllSnapshots()
+            ?? BuildSnapshotsFromService(candles);
+
+        return new PrecomputedBacktestData { Candles = candles, Snapshots = snapshots };
+    }
+
+    private IndicatorSnapshot[] BuildSnapshotsFromService(IReadOnlyList<Core.Models.Candle> candles)
+    {
+        var arr = new IndicatorSnapshot[candles.Count];
+        for (int i = 0; i < candles.Count; i++)
+            arr[i] = _indicatorService.GetSnapshot(i);
+        return arr;
+    }
+
+    /// <summary>
+    /// Runs only the backtest loop using pre-loaded data (no I/O, no indicator
+    /// recomputation). Prefer this overload inside tight loops such as GA fitness
+    /// evaluation.  Thread-safe: every call operates on its own local state.
+    /// </summary>
+    public BacktestResult Run(
+        Interfaces.IStrategy strategy,
+        PrecomputedBacktestData data,
+        Configuration.BacktestConfig config)
+    {
+        ArgumentNullException.ThrowIfNull(strategy);
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(config);
+
+        if (data.Candles.Count == 0)
+            return EmptyResult();
+
+        strategy.Initialize(data.Candles);
+        return RunLoop(strategy, data.Candles, data.Snapshots, config);
+    }
+
+    /// <summary>
     /// Runs a full backtest for the given strategy and configuration.
     /// </summary>
     public async Task<BacktestResult> RunAsync(
@@ -42,11 +96,21 @@ public sealed class BacktestEngine
 
         // ── 2. Pre-compute indicators ─────────────────────────────────────────
         _indicatorService.Initialize(candles);
+        var snapshots = BuildSnapshotsFromService(candles);
 
         // ── 3. Initialise strategy ────────────────────────────────────────────
         strategy.Initialize(candles);
 
         // ── 4. Backtest loop ──────────────────────────────────────────────────
+        return RunLoop(strategy, candles, snapshots, config);
+    }
+
+    private static BacktestResult RunLoop(
+        Interfaces.IStrategy strategy,
+        IReadOnlyList<Core.Models.Candle> candles,
+        IndicatorSnapshot[] snapshots,
+        Configuration.BacktestConfig config)
+    {
         var portfolio = new PortfolioState
         {
             Cash          = config.InitialCapital,
@@ -59,8 +123,6 @@ public sealed class BacktestEngine
 
         for (int i = 0; i < candles.Count; i++)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             var candle = candles[i];
 
             // Update unrealised equity
@@ -72,7 +134,7 @@ public sealed class BacktestEngine
             var context = new StrategyContext
             {
                 Candle     = candle,
-                Indicators = _indicatorService.GetSnapshot(i),
+                Indicators = snapshots[i],
                 Portfolio  = portfolio,
                 History    = candles,
             };

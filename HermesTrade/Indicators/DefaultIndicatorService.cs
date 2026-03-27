@@ -78,6 +78,12 @@ public sealed class DefaultIndicatorService : IIndicatorService
         }
     }
 
+    /// <summary>
+    /// Returns the full array of pre-computed snapshots (one entry per candle).
+    /// Must be called after <see cref="Initialize"/>.
+    /// </summary>
+    public IndicatorSnapshot[] GetAllSnapshots() => _snapshots;
+
     /// <inheritdoc />
     public IndicatorSnapshot GetSnapshot(int index)
     {
