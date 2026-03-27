@@ -55,83 +55,64 @@ public sealed class YahooFinanceDataProvider : IMarketDataProvider
 
         if (cached != null)
         {
-            Console.WriteLine($"[Yahoo Finance] ✓ Loaded {cached.Count()} candles from cache for {yahooSymbol}");
             return cached;
         }
 
-        Console.WriteLine($"[Yahoo Finance] Downloading historical data for {yahooSymbol}...");
-        Console.WriteLine($"  Period: {from:yyyy-MM-dd} to {to:yyyy-MM-dd}");
+        
+        // Download data from Yahoo Finance using YahooQuotesApi v7
+        var instantFrom = Instant.FromDateTimeUtc(DateTime.SpecifyKind(from, DateTimeKind.Utc));
+        var instantTo   = Instant.FromDateTimeUtc(DateTime.SpecifyKind(to,   DateTimeKind.Utc));
 
-        try
+        var yahoo = new YahooQuotesBuilder()
+            .WithHistoryStartDate(instantFrom)
+            .Build();
+
+        var result = await yahoo.GetHistoryAsync(yahooSymbol, "USD", cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result.HasError)
         {
-            // Download data from Yahoo Finance using YahooQuotesApi v7
-            var instantFrom = Instant.FromDateTimeUtc(DateTime.SpecifyKind(from, DateTimeKind.Utc));
-            var instantTo   = Instant.FromDateTimeUtc(DateTime.SpecifyKind(to,   DateTimeKind.Utc));
-
-            var yahoo = new YahooQuotesBuilder()
-                .WithHistoryStartDate(instantFrom)
-                .Build();
-
-            var result = await yahoo.GetHistoryAsync(yahooSymbol, "USD", cancellationToken)
-                .ConfigureAwait(false);
-
-            if (result.HasError)
-            {
-                Console.WriteLine($"[Yahoo Finance] ⚠ Error from Yahoo Finance for {yahooSymbol}: {result.Error}");
-                return [];
-            }
-
-            if (!result.HasValue || result.Value.Ticks.IsEmpty)
-            {
-                Console.WriteLine($"[Yahoo Finance] ⚠ No historical data found for {yahooSymbol}");
-                return [];
-            }
-
-            var historicalData = result.Value.Ticks;
-
-            var candles = historicalData
-                .Where(tick => tick.Date <= instantTo)
-                .OrderBy(tick => tick.Date)
-                .Select(tick => new Core.Models.Candle(
-                    timestamp: tick.Date.ToDateTimeUtc(),
-                    open: (decimal)tick.Open,
-                    high: (decimal)tick.High,
-                    low: (decimal)tick.Low,
-                    close: (decimal)tick.Close,
-                    volume: (decimal)tick.Volume
-                ))
-                .ToList();
-
-            if (candles.Count == 0)
-            {
-                Console.WriteLine($"[Yahoo Finance] ⚠ No data found for {yahooSymbol}");
-                return [];
-            }
-
-            var candelNonPositiveClose = candles.FirstOrDefault(c => c.Close <= 0);
-            if (candelNonPositiveClose != null)
-            {
-                Console.WriteLine($"[Yahoo Finance] ⚠ Warning: Some candles have non-positive close prices for {yahooSymbol} {candelNonPositiveClose.Timestamp:yyyy-MM-dd}");
-            }
-
-            Console.WriteLine($"[Yahoo Finance] ✓ Downloaded {candles.Count} candles");
-            Console.WriteLine($"  First: {candles.First().Timestamp:yyyy-MM-dd} @ ${candles.First().Close:N2}");
-            Console.WriteLine($"  Last:  {candles.Last().Timestamp:yyyy-MM-dd} @ ${candles.Last().Close:N2}");
-            Console.WriteLine($"  Change: {((candles.Last().Close - candles.First().Close) / candles.First().Close * 100):+0.00;-0.00}%");
-
-            // Save to cache for future use
-            await _cache.SaveAsync(ProviderName, yahooSymbol, from, to, candles, cancellationToken)
-                .ConfigureAwait(false);
-
-            return candles;
+            throw new InvalidOperationException($"Error fetching data from Yahoo Finance for {yahooSymbol}: {result.Error}");
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+
+        if (!result.HasValue || result.Value.Ticks.IsEmpty)
         {
-            Console.WriteLine($"[Yahoo Finance] ✗ Error downloading data for {yahooSymbol}: {ex.Message}");
-            throw new InvalidOperationException(
-                $"Failed to download historical data for {yahooSymbol} from Yahoo Finance. " +
-                $"Ensure the symbol is correct and Yahoo Finance supports it.", ex);
+            throw new InvalidOperationException($"No historical data found for {yahooSymbol} from Yahoo Finance.");
         }
+
+        var historicalData = result.Value.Ticks;
+
+        var candles = historicalData
+            .Where(tick => tick.Date <= instantTo)
+            .OrderBy(tick => tick.Date)
+            .Select(tick => new Core.Models.Candle(
+                timestamp: tick.Date.ToDateTimeUtc(),
+                open: (decimal)tick.Open,
+                high: (decimal)tick.High,
+                low: (decimal)tick.Low,
+                close: (decimal)tick.Close,
+                volume: (decimal)tick.Volume
+            ))
+            .ToList();
+
+        if (candles.Count == 0)
+        {
+            throw new InvalidOperationException($"No historical data found for {yahooSymbol} in the specified date range.");
+        }
+
+        var candelNonPositiveClose = candles.FirstOrDefault(c => c.Close <= 0);
+        if (candelNonPositiveClose != null)
+        {
+            throw new InvalidOperationException($"Invalid data: Candle with non-positive close price found for {yahooSymbol} on {candelNonPositiveClose.Timestamp:yyyy-MM-dd}. " +
+                $"This may indicate a data issue with Yahoo Finance for this symbol and date.");
+                
+        }
+
+        // Save to cache for future use
+        await _cache.SaveAsync(ProviderName, yahooSymbol, from, to, candles, cancellationToken)
+            .ConfigureAwait(false);
+
+        return candles;
     }
 
     /// <summary>
