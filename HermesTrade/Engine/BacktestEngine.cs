@@ -122,10 +122,13 @@ public sealed class BacktestEngine
         var equityCurve   = new List<decimal>(candles.Count);
 
         List<StrategyContext>  history = new List<StrategyContext>();
-        for (int i = 0; i < candles.Count; i++)
+        var rangeCandles = candles
+                            .Where(c => c.Timestamp >= config.From && c.Timestamp <= config.To)
+                            .Select((c, i) => (Candle: c, Index: i))
+                            .ToList();
+        
+        foreach(var (candle, i) in rangeCandles)
         {
-            var candle = candles[i];
-
             // Update unrealised equity
             portfolio.CurrentEquity = portfolio.Cash
                 + (openPosition.IsOpen
