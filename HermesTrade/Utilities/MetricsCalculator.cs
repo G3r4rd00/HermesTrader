@@ -16,6 +16,7 @@ public static class MetricsCalculator
     public static BacktestResult Compute(
         IReadOnlyList<Trade>   trades,
         IReadOnlyList<decimal> equityCurve,
+        IReadOnlyList<Candle>  candles,
         decimal                initialCapital)
     {
         if (trades.Count == 0)
@@ -28,6 +29,7 @@ public static class MetricsCalculator
                 EquityCurve  = equityCurve,
                 Trades       = trades,
                 MaxDrawdown  = 0m,
+                Candles      = candles,
                 SharpeRatio  = 0,
             };
         }
@@ -46,6 +48,7 @@ public static class MetricsCalculator
             EquityCurve  = equityCurve,
             Trades       = trades,
             MaxDrawdown  = maxDrawdown,
+            Candles      = candles,
             SharpeRatio  = sharpe,
         };
     }

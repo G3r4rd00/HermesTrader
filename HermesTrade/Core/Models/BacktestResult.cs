@@ -17,6 +17,9 @@ public sealed class BacktestResult
     /// <summary>Chronological equity curve (portfolio value at each candle).</summary>
     public IReadOnlyList<decimal> EquityCurve { get; init; } = [];
 
+    /// <summary>The list of candles used for this backtest (chronological, newest last).</summary>
+    public IReadOnlyList<Candle> Candles { get; init; } = [];
+
     /// <summary>All completed trades in chronological order.</summary>
     public IReadOnlyList<Trade> Trades { get; init; } = [];
 

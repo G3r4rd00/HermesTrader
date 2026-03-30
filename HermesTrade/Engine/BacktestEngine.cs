@@ -183,7 +183,7 @@ public sealed class BacktestEngine
                 equityCurve[^1] = portfolio.CurrentEquity;
         }
 
-        return MetricsCalculator.Compute(completedTrades, equityCurve, config.InitialCapital);
+        return MetricsCalculator.Compute(completedTrades, equityCurve, rangeCandles.Select(r => r.Candle).ToList(), config.InitialCapital);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -234,6 +234,7 @@ public sealed class BacktestEngine
             WinRate      = 0,
             EquityCurve  = [],
             Trades       = [],
+            Candles       = new List<Candle>(0),
             MaxDrawdown  = 0m,
             SharpeRatio  = 0,
         };
