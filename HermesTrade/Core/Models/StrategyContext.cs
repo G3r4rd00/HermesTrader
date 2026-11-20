@@ -14,8 +14,12 @@ public sealed class StrategyContext
     /// <summary>Current portfolio state before any action on this candle.</summary>
     public required PortfolioState Portfolio { get; init; }
 
-    /// <summary>Full historical candle series (read-only, newest last).</summary>
+    /// <summary>
+    /// Candle series up to and including the current candle (read-only, newest last).
+    /// Includes warm-up candles before the backtest window, never future candles.
+    /// </summary>
     public required IReadOnlyList<Candle> History { get; init; }
 
-    public StrategyContext Prev { get; init; } = null!;
+    /// <summary>Context of the previous candle in the backtest window (null on the first one).</summary>
+    public StrategyContext? Prev { get; init; }
 }

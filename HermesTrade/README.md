@@ -28,31 +28,28 @@ dotnet add package HermesTrade
 
 ```csharp
 using HermesTrade.Configuration;
-using HermesTrade.Engine;
-using HermesTrade.Strategies;
 using HermesTrade.Data;
-using Microsoft.Extensions.Logging;
+using HermesTrade.Engine;
+using HermesTrade.Indicators;
+using HermesTrade.Strategies;
 
 var config = new BacktestConfig
 {
     Symbol         = "BTC-USD",
-    Start          = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero),
-    End            = new DateTimeOffset(2024, 12, 31, 0, 0, 0, TimeSpan.Zero),
+    From           = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+    To             = new DateTime(2024, 12, 31, 23, 59, 59, DateTimeKind.Utc),
     InitialCapital = 10_000m,
-    CommissionRate = 0.001m
+    Fees           = 0.001m   // 0.1% per side
 };
 
-using var httpClient = new HttpClient();
-var logger   = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<YahooFinanceDataProvider>();
-var cache    = new FileCacheService();
-var provider = new YahooFinanceDataProvider(httpClient, cache, logger);
+var provider = new YahooFinanceDataProvider(new FileCacheService());
+var engine   = new BacktestEngine(provider, new DefaultIndicatorService());
 var strategy = new SimpleStrategyExample(oversoldThreshold: 30m, overboughtThreshold: 70m);
 
-var engine = new BacktestEngine();
-var result = await engine.RunAsync(config, provider, strategy);
+var result = await engine.RunAsync(strategy, config);
 
-Console.WriteLine($"Net Profit : {result.NetProfit:C}");
-Console.WriteLine($"Return     : {result.ReturnPct:P2}");
+Console.WriteLine($"Net Profit : {result.TotalProfit:C}");
+Console.WriteLine($"Return     : {result.TotalProfit / config.InitialCapital:P2}");
 Console.WriteLine($"Win Rate   : {result.WinRate:P2}");
 Console.WriteLine($"Sharpe     : {result.SharpeRatio:F2}");
 ```
@@ -60,14 +57,22 @@ Console.WriteLine($"Sharpe     : {result.SharpeRatio:F2}");
 ## Implementing a Custom Strategy
 
 ```csharp
+using HermesTrade.Core.Enums;
+using HermesTrade.Core.Models;
+using HermesTrade.Interfaces;
+
 public class MyStrategy : IStrategy
 {
+    // Warm-up candles before BacktestConfig.From (never future candles)
     public void Initialize(IEnumerable<Candle> history) { }
 
-    public Signal Evaluate(StrategyContext context)
+    // history: contexts evaluated so far in the backtest window, oldest first;
+    // the last one is the current candle.
+    public Signal Evaluate(List<StrategyContext> history)
     {
-        var rsi    = context.Indicators.RSI;
-        var hasPos = context.Portfolio.HasOpenPosition;
+        var context = history[^1];
+        var rsi     = context.Indicators.RSI;   // null until the indicator is warmed up
+        var hasPos  = context.Portfolio.HasOpenPosition;
 
         if (rsi < 25 && !hasPos) return Signal.Buy;
         if (rsi > 75 &&  hasPos) return Signal.Sell;
@@ -90,6 +95,19 @@ public class MyStrategy : IStrategy
 | `FileCacheService` | Persists downloaded data locally |
 | `SimpleStrategyExample` | Reference RSI strategy |
 | `BacktestResult` | Trades, profit, drawdown, Sharpe |
+
+## Notes
+
+- **Indicator warm-up**: `BacktestConfig.IndicatorWarmup` (default 400 days) loads extra history before `From`
+  so indicators such as SMA200 are ready on the first candle. Those candles are never traded and are not part
+  of the results; `IStrategy.Initialize` receives exactly them (never candles inside or after the window).
+- **Fills**: orders fill at the close of the candle that produced the signal; trade times are that candle's timestamp.
+- **Sharpe ratio**: annualised with `BacktestConfig.PeriodsPerYear`, or inferred from the candle timestamps when null.
+- **Reuse**: `PrecomputeAsync` + `Run` evaluates many strategies over the same data, also in parallel
+  (one strategy instance per call), for any window inside the precomputed range.
+- **Yahoo Finance**: daily candles stamped at 00:00 UTC of the exchange's trading date; `From`/`To` are compared
+  by date (inclusive). Prices are split-adjusted but not dividend-adjusted unless you pass
+  `useDividendAdjustedPrices: true`. Forex symbols (`EURUSD=X`) are not supported.
 
 ## Requirements
 

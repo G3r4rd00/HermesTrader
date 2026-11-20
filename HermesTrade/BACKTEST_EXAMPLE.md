@@ -8,7 +8,7 @@ HermesTrade/
 │   ├── Engine/                     # Motor de backtesting
 │   ├── Strategies/                 # Estrategias de ejemplo
 │   ├── Indicators/                 # Servicios de indicadores
-│   ├── Data/                       # Proveedores de datos (Binance, Coinbase)
+│   ├── Data/                       # Proveedor Yahoo Finance + caché en disco
 │   ├── Core/                       # Modelos y enums
 │   ├── Interfaces/                 # Contratos
 │   └── Configuration/              # Configuraciones
@@ -87,19 +87,20 @@ var config = new BacktestConfig
 
 ### Usar Datos Reales
 
-Para conectar con datos reales de Yahoo Finance, descomenta en `Program.cs`:
+Para conectar con datos reales de Yahoo Finance, en `Program.cs` comenta la línea de `MockMarketDataProvider` y descomenta:
 
 ```csharp
-// Opción 2: Datos reales de Yahoo Finance (descomenta para usar)
+// Opción 2: datos reales de Yahoo Finance
 var cacheService = new FileCacheService("cache");
-var dataProvider = new YahooFinanceDataProvider(cacheService, Period.Daily);
+var dataProvider = new YahooFinanceDataProvider(cacheService);
 ```
 
 **Símbolos soportados:**
 - 📈 **Acciones**: "AAPL", "MSFT", "TSLA", "GOOGL", "AMZN"
 - 💰 **Crypto**: "BTC-USD", "ETH-USD", "ADA-USD", "SOL-USD"
 - 📊 **Índices**: "^GSPC" (S&P 500), "^DJI" (Dow Jones)
-- 💱 **Forex**: "EURUSD=X", "GBPUSD=X"
+
+Forex ("EURUSD=X") no está soportado: YahooQuotesApi no devuelve histórico de pares de divisas.
 
 **Ventajas:**
 - ✅ 100% gratuito, sin API key

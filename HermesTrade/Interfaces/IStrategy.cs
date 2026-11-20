@@ -9,10 +9,13 @@ namespace HermesTrade.Interfaces;
 public interface IStrategy
 {
     /// <summary>
-    /// Called once before the backtest loop begins, allowing the strategy
-    /// to warm up or pre-compute state from the full history.
+    /// Called once before each backtest run, allowing the strategy to reset its
+    /// state and warm up from the candles that precede the backtest window.
     /// </summary>
-    /// <param name="history">The complete, ordered candle history.</param>
+    /// <param name="history">
+    /// The ordered warm-up candles strictly before <c>BacktestConfig.From</c>.
+    /// Never contains candles inside or after the backtest window (no look-ahead).
+    /// </param>
     void Initialize(IEnumerable<Candle> history);
 
     /// <summary>

@@ -23,7 +23,7 @@ Programa principal que:
 
 ### MockMarketDataProvider.cs
 Implementación de prueba de `IMarketDataProvider` que genera datos de mercado sintéticos con:
-- Tendencia simulada usando una función sinusoidal
+- Tendencia alcista suave más un ciclo sinusoidal
 - Volatilidad aleatoria controlada
 - Velas OHLC realistas
 
@@ -44,6 +44,9 @@ O desde Visual Studio:
 
 ## Ejemplo de salida
 
+Salida real con `MockMarketDataProvider` (el formato de números depende de la cultura del sistema).
+Las velas anteriores a `From` (desde 2022-11-27) solo sirven para calentar los indicadores:
+
 ```
 ═══════════════════════════════════════════════════════════
   HermesTrade - Ejemplo de BacktestEngine
@@ -52,23 +55,29 @@ O desde Visual Studio:
 Configuración del Backtest:
   Symbol:            BTC-USD
   Período:           2024-01-01 a 2024-12-31
-  Capital inicial:   $10,000.00
-  Comisiones:        0.10%
+  Capital inicial:   $10.000,00
+  Comisiones:        0,10 %
   Estrategia:        RSI (Compra<30, Venta>70)
 
 Ejecutando backtest...
+
+Generando datos de mercado sintéticos para BTC-USD...
+✓ Generadas 766 velas desde 2022-11-27 hasta 2024-12-31
+  Precio inicial: $66.595,93
+  Precio final:   $85.612,95
+  Variación:      +28,56%
 
 ═══════════════════════════════════════════════════════════
   RESULTADOS DEL BACKTEST
 ═══════════════════════════════════════════════════════════
 
-Total de operaciones: 15
-Beneficio neto:       $1,234.56
-Retorno:              12.35%
-Tasa de éxito:        66.67%
-Máximo Drawdown:      $567.89
-Sharpe Ratio:         1.23
-Capital final:        $11,234.56
+Total de operaciones: 3
+Beneficio neto:       $-2.437,84
+Retorno:              -24,38%
+Tasa de éxito:        0,00 %
+Máximo Drawdown:      $3.434,86
+Sharpe Ratio:         -1,44
+Capital final:        $7.562,16
 ```
 
 ## Personalización
@@ -96,13 +105,18 @@ var config = new BacktestConfig
 };
 ```
 
-### Usar datos reales
+### Usar datos reales (Yahoo Finance)
 
-Reemplaza `MockMarketDataProvider` con `BinanceDataProvider` o `CoinbaseDataProvider`:
+En `Program.cs`, comenta la línea de `MockMarketDataProvider` y descomenta las de Yahoo Finance:
 
 ```csharp
-var dataProvider = new BinanceDataProvider("tu_api_key", "tu_api_secret");
+using HermesTrade.Data;
+
+var cacheService = new FileCacheService("cache");
+var dataProvider = new YahooFinanceDataProvider(cacheService);
 ```
+
+Para otras fuentes (exchanges, CSV, bases de datos...) implementa tu propio `IMarketDataProvider`.
 
 ## Próximos pasos
 
@@ -110,7 +124,7 @@ var dataProvider = new BinanceDataProvider("tu_api_key", "tu_api_secret");
 - 💾 Guarda los resultados en archivos CSV o JSON
 - 📈 Visualiza la curva de equity con una librería de gráficos
 - 🔄 Ejecuta múltiples backtests con diferentes parámetros (optimización)
-- 📦 Conecta con fuentes de datos reales (Binance, Coinbase, etc.)
+- 📦 Conecta con otras fuentes de datos implementando `IMarketDataProvider`
 
 ## Referencias
 

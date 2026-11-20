@@ -24,3 +24,6 @@ project.fragment.lock.json
 ## OS
 .DS_Store
 Thumbs.db
+
+## Example data cache (FileCacheService("cache"))
+cache/

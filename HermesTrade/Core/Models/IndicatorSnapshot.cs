@@ -60,6 +60,23 @@ public sealed class IndicatorSnapshot
 
     // ── Extensibility ────────────────────────────────────────────────────────
 
+    private Dictionary<string, decimal>? _custom;
+
     /// <summary>Arbitrary named indicators added by custom strategies.</summary>
-    public Dictionary<string, decimal> Custom { get; set; } = new();
+    public Dictionary<string, decimal> Custom
+    {
+        get => _custom ??= new();
+        set => _custom = value;
+    }
+
+    /// <summary>
+    /// Returns an independent copy (including <see cref="Custom"/>), so changes made
+    /// by one backtest run never leak into another run over the same data.
+    /// </summary>
+    public IndicatorSnapshot Clone()
+    {
+        var copy = (IndicatorSnapshot)MemberwiseClone();
+        copy._custom = _custom is { Count: > 0 } ? new Dictionary<string, decimal>(_custom) : null;
+        return copy;
+    }
 }

@@ -45,11 +45,12 @@ public sealed class DefaultIndicatorService : IIndicatorService
 
         // ── Build per-candle snapshots ────────────────────────────────────────
 
-        _snapshots = new IndicatorSnapshot[candles.Count];
+        // Fill a local array and publish it at the end, so readers never see a half-built one
+        var snapshots = new IndicatorSnapshot[candles.Count];
 
         for (int i = 0; i < candles.Count; i++)
         {
-            _snapshots[i] = new IndicatorSnapshot
+            snapshots[i] = new IndicatorSnapshot
             {
                 RSI           = ToDecimal(rsiResults[i].Rsi),
                 SMA10         = ToDecimal(sma10Results[i].Sma),
@@ -71,11 +72,13 @@ public sealed class DefaultIndicatorService : IIndicatorService
                 SenkouSpanB   = ichResults[i].SenkouSpanB,
                 ADX           = ToDecimal(adxResults[i].Adx),
                 CCI           = ToDecimal(cciResults[i].Cci),
-                OBV           = (decimal)obvResults[i].Obv,
+                OBV           = ToDecimal(obvResults[i].Obv),
                 StochasticK   = ToDecimal(stochResults[i].K),
                 StochasticD   = ToDecimal(stochResults[i].D),
             };
         }
+
+        _snapshots = snapshots;
     }
 
     /// <summary>
@@ -111,6 +114,9 @@ public sealed class DefaultIndicatorService : IIndicatorService
             Volume = c.Volume,
         };
 
+    // NaN, infinities and values outside the decimal range become null instead of throwing
     private static decimal? ToDecimal(double? value) =>
-        value.HasValue ? (decimal)value.Value : null;
+        value is double v && double.IsFinite(v) && Math.Abs(v) < (double)decimal.MaxValue
+            ? (decimal)v
+            : null;
 }

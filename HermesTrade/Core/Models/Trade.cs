@@ -5,10 +5,16 @@ namespace HermesTrade.Core.Models;
 /// </summary>
 public sealed class Trade
 {
-    /// <summary>Timestamp when the position was entered.</summary>
+    /// <summary>
+    /// Timestamp of the candle whose close filled the entry. This is the candle's
+    /// <see cref="Candle.Timestamp"/> (start of its period), while the fill price is its close.
+    /// </summary>
     public DateTime EntryTime { get; init; }
 
-    /// <summary>Timestamp when the position was exited.</summary>
+    /// <summary>
+    /// Timestamp of the candle whose close filled the exit. This is the candle's
+    /// <see cref="Candle.Timestamp"/> (start of its period), while the fill price is its close.
+    /// </summary>
     public DateTime ExitTime { get; init; }
 
     /// <summary>Price at which the position was entered.</summary>

@@ -24,5 +24,8 @@ jobs:
       - name: Build
         run: dotnet build HermesTrade/HermesTrade.sln --configuration Release --no-restore
 
+      - name: Test
+        run: dotnet test HermesTrade/HermesTrade.sln --configuration Release --no-build
+
       - name: Pack (dry-run)
         run: dotnet pack HermesTrade/HermesTrade.csproj --configuration Release --no-build --output ./nupkg

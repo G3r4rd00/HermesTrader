@@ -14,6 +14,7 @@ public interface IMarketDataProvider
     /// <param name="symbol">Market symbol, e.g. "BTCUSDT" or "BTC-USD".</param>
     /// <param name="from">Start of the requested date range (UTC).</param>
     /// <param name="to">End of the requested date range (UTC).</param>
+    /// <param name="cancellationToken">Cancels the download.</param>
     /// <returns>An ordered (ascending by time) sequence of candles.</returns>
     Task<IEnumerable<Candle>> GetHistoricalDataAsync(
         string symbol,

@@ -9,16 +9,18 @@ Este documento explica cómo usar datos reales de Yahoo Finance en lugar de dato
 1. Abre `Examples/HermesTrade.Example/Program.cs`
 2. Comenta la línea de MockMarketDataProvider:
 
+3. Descomenta las líneas de Yahoo Finance:
+
 ```csharp
-// Opción 1: Datos sintéticos (para pruebas rápidas)
+// Opción 1 (por defecto): datos sintéticos, sin red y reproducibles
 // var dataProvider = new MockMarketDataProvider();
 
-// Opción 2: Datos reales de Yahoo Finance (descomenta para usar)
+// Opción 2: datos reales de Yahoo Finance
 var cacheService = new FileCacheService("cache");
-var dataProvider = new YahooFinanceDataProvider(cacheService, Period.Daily);
+var dataProvider = new YahooFinanceDataProvider(cacheService);
 ```
 
-3. Cambia el símbolo y período según necesites:
+4. Cambia el símbolo y período según necesites:
 
 ```csharp
 var config = new BacktestConfig
@@ -70,13 +72,8 @@ var config = new BacktestConfig
 ```
 
 ### Forex (Divisas)
-```csharp
-"EURUSD=X"  // Euro / US Dollar
-"GBPUSD=X"  // British Pound / US Dollar
-"JPYUSD=X"  // Japanese Yen / US Dollar
-"AUDUSD=X"  // Australian Dollar / US Dollar
-"CADUSD=X"  // Canadian Dollar / US Dollar
-```
+No soportado: YahooQuotesApi no devuelve histórico de pares de divisas ("EURUSD=X"),
+y el proveedor lanza `NotSupportedException` para esos símbolos.
 
 ### ETFs
 ```csharp
@@ -88,15 +85,11 @@ var config = new BacktestConfig
 "TLT"   // iShares 20+ Year Treasury Bond ETF
 ```
 
-## 📅 Intervalos de Tiempo (Period)
+## 📅 Intervalo de Tiempo
 
-```csharp
-Period.Daily       // Velas diarias (recomendado para backtesting)
-Period.Weekly      // Velas semanales
-Period.Monthly     // Velas mensuales
-```
-
-**Nota:** Yahoo Finance API gratuita solo soporta estos intervalos. Para intervalos intradiarios (1m, 5m, 15m, 1h) necesitarías una fuente de datos diferente.
+El proveedor solo devuelve **velas diarias** (YahooQuotesApi siempre pide `interval=1d`).
+No hay opción semanal, mensual ni intradiaria: para otros intervalos agrega tú las velas
+diarias o implementa un `IMarketDataProvider` propio.
 
 ## 💾 Caché de Datos
 
@@ -104,18 +97,22 @@ El `YahooFinanceDataProvider` usa un sistema de caché local:
 
 - **Primera consulta**: Descarga datos de Yahoo Finance y los guarda localmente
 - **Consultas posteriores**: Lee desde el caché (mucho más rápido)
-- **Ubicación**: Carpeta `cache/` en el directorio de ejecución
+- **Ubicación**: Carpeta `cache/` relativa al directorio de trabajo actual (desde donde lanzas `dotnet run`)
+- **Nombre de fichero**: `YAHOO-FINANCE-V2_{SÍMBOLO}_{yyyyMMdd}_{yyyyMMdd}.json`, p. ej. `YAHOO-FINANCE-V2_AAPL_20230101_20231231.json`
+  (`YAHOO-FINANCE-V2-ADJ_...` con precios ajustados por dividendos; los ficheros `YAHOO-FINANCE_...` de versiones anteriores ya no se usan y se pueden borrar)
+- **Rangos abiertos**: si `To` es ayer, hoy o una fecha futura no se usa la caché, porque los datos siguen creciendo y la última sesión puede no estar cerrada
+- **Entradas inválidas**: un fichero vacío, corrupto o con cierres a 0 se descarta y se vuelve a descargar
 
 ### Limpiar la Caché
 
 Si quieres forzar la descarga de datos actualizados:
 
-```bash
+```powershell
 # Eliminar toda la caché
 Remove-Item -Recurse cache/
 
 # O eliminar solo un símbolo específico
-Remove-Item cache/yahoo-finance/AAPL-*
+Remove-Item cache/YAHOO-FINANCE*_AAPL_*.json
 ```
 
 ## 🎯 Ejemplos Completos
@@ -124,7 +121,7 @@ Remove-Item cache/yahoo-finance/AAPL-*
 
 ```csharp
 var cacheService = new FileCacheService("cache");
-var dataProvider = new YahooFinanceDataProvider(cacheService, Period.Daily);
+var dataProvider = new YahooFinanceDataProvider(cacheService);
 var indicatorService = new DefaultIndicatorService();
 var backtestEngine = new BacktestEngine(dataProvider, indicatorService);
 
@@ -191,6 +188,22 @@ Yahoo Finance devuelve datos según los horarios de mercado:
 ### Fechas sin datos
 Si una fecha cae en fin de semana o festivo, no habrá datos disponibles.
 
+### Fechas de las velas
+Cada vela diaria se fecha a las 00:00 UTC de su día de cotización en la zona horaria de la bolsa
+(una sesión de Sídney del lunes es el lunes, aunque abra el domingo en UTC). `From` y `To` se
+comparan por fecha, inclusive: `To = new DateTime(2024, 12, 31)` incluye el 31 de diciembre.
+
+### Dividendos
+Por defecto los precios están ajustados por splits pero no por dividendos, así que el resultado es
+solo la rentabilidad del precio. Para aproximar la rentabilidad total:
+
+```csharp
+var dataProvider = new YahooFinanceDataProvider(cacheService, useDividendAdjustedPrices: true);
+```
+
+Esos precios están reajustados hacia atrás a la fecha de descarga: no son precios negociados
+y cambian con cada nuevo dividendo (borra la caché para refrescarlos).
+
 ## 🔧 Troubleshooting
 
 ### Error: "Símbolo no encontrado"
@@ -223,7 +236,7 @@ HTTP 429 Too Many Requests
 ## 📚 Recursos
 
 - [Yahoo Finance](https://finance.yahoo.com/)
-- [YahooFinanceApi NuGet](https://www.nuget.org/packages/YahooFinanceApi/)
+- [YahooQuotesApi NuGet](https://www.nuget.org/packages/YahooQuotesApi/)
 - [Lista de símbolos Yahoo Finance](https://finance.yahoo.com/lookup/)
 
 ## 🎓 Siguiente Paso

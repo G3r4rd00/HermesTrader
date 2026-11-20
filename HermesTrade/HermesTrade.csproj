@@ -30,6 +30,13 @@
     <Compile Remove="Examples\**" />
     <EmbeddedResource Remove="Examples\**" />
     <None Remove="Examples\**" />
+    <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="HermesTrade.Tests" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,7 +48,7 @@
     <PackageReference Include="Skender.Stock.Indicators" Version="2.6.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
-    <PackageReference Include="YahooQuotesApi" Version="7.0.6" />
+    <PackageReference Include="YahooQuotesApi" Version="7.0.9" />
   </ItemGroup>
 
 </Project>

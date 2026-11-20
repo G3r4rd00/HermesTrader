@@ -19,4 +19,7 @@ public sealed class PortfolioState
 
     /// <summary>Total portfolio value: cash + open position market value.</summary>
     public decimal CurrentEquity { get; set; }
+
+    /// <summary>Returns an independent copy of this state.</summary>
+    public PortfolioState Clone() => (PortfolioState)MemberwiseClone();
 }

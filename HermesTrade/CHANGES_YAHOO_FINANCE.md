@@ -12,15 +12,15 @@ Se ha reemplazado los proveedores de datos de Binance y Coinbase por **Yahoo Fin
 ## ✅ Archivos Creados
 
 ### 1. `Data/YahooFinanceDataProvider.cs`
-Nuevo proveedor de datos que usa el paquete NuGet `YahooFinanceApi`.
+Nuevo proveedor de datos que usa el paquete NuGet `YahooQuotesApi`.
 
 **Características:**
 - ✅ Soporte para múltiples tipos de activos:
   - Acciones (AAPL, MSFT, TSLA, etc.)
   - Criptomonedas (BTC-USD, ETH-USD, etc.)
   - Índices (^GSPC, ^DJI, etc.)
-  - Forex (EURUSD=X, GBPUSD=X, etc.)
   - ETFs (SPY, QQQ, etc.)
+  - (Forex como EURUSD=X no está soportado por YahooQuotesApi)
 - ✅ Sin API key requerida
 - ✅ 100% gratuito
 - ✅ Caché local automático
@@ -36,14 +36,13 @@ Guía completa de uso de Yahoo Finance con:
 ## 📦 Paquete NuGet Agregado
 
 ```xml
-<PackageReference Include="YahooFinanceApi" />
+<PackageReference Include="YahooQuotesApi" Version="7.0.9" />
 ```
 
 ## 🔧 Archivos Modificados
 
 ### `Examples/HermesTrade.Example/Program.cs`
 - ✅ Agregado `using HermesTrade.Data;`
-- ✅ Agregado `using YahooFinanceApi;`
 - ✅ Agregados comentarios con instrucciones para cambiar entre MockMarketDataProvider y YahooFinanceDataProvider
 - ✅ Lista de símbolos disponibles en los comentarios
 
@@ -59,7 +58,7 @@ Guía completa de uso de Yahoo Finance con:
 - ✅ Ventajas y consideraciones
 
 ### `HermesTrade.csproj`
-- ✅ Agregado `YahooFinanceApi` como dependencia
+- ✅ Agregado `YahooQuotesApi` como dependencia
 - ✅ Mantenido el resto de configuración intacta
 
 ## 🎯 Cómo Usar Yahoo Finance
@@ -69,26 +68,29 @@ Guía completa de uso de Yahoo Finance con:
 En `Examples/HermesTrade.Example/Program.cs`, descomenta:
 
 ```csharp
-// Opción 2: Datos reales de Yahoo Finance (descomenta para usar)
+// Opción 2: datos reales de Yahoo Finance
 var cacheService = new FileCacheService("cache");
-var dataProvider = new YahooFinanceDataProvider(cacheService, Period.Daily);
+var dataProvider = new YahooFinanceDataProvider(cacheService);
 ```
 
 Y comenta la línea de MockMarketDataProvider:
 
 ```csharp
-// Opción 1: Datos sintéticos (para pruebas rápidas)
+// Opción 1 (por defecto): datos sintéticos, sin red y reproducibles
 // var dataProvider = new MockMarketDataProvider();
 ```
 
 ### Opción 2: Crear tu propio código
 
 ```csharp
+using HermesTrade.Configuration;
 using HermesTrade.Data;
-using YahooFinanceApi;
+using HermesTrade.Engine;
+using HermesTrade.Indicators;
+using HermesTrade.Strategies;
 
 var cacheService = new FileCacheService("cache");
-var dataProvider = new YahooFinanceDataProvider(cacheService, Period.Daily);
+var dataProvider = new YahooFinanceDataProvider(cacheService);
 var indicatorService = new DefaultIndicatorService();
 var backtestEngine = new BacktestEngine(dataProvider, indicatorService);
 
@@ -126,15 +128,14 @@ var result = await backtestEngine.RunAsync(strategy, config);
 - `^DJI` - Dow Jones
 - `^IXIC` - NASDAQ
 
-### Forex
-- `EURUSD=X` - Euro / USD
-- `GBPUSD=X` - Libra / USD
-
 ## 🔍 Verificación
 
 ```bash
 # Compilar proyecto
-dotnet build
+dotnet build HermesTrade.sln
+
+# Ejecutar los tests
+dotnet test HermesTrade.sln
 
 # Ejecutar ejemplo con datos mock (por defecto)
 dotnet run --project Examples/HermesTrade.Example/HermesTrade.Example.csproj
@@ -151,7 +152,7 @@ dotnet run --project Examples/HermesTrade.Example/HermesTrade.Example.csproj
 ## ✨ Beneficios
 
 1. **Gratuito**: Sin costos, sin API keys
-2. **Diversificado**: Acciones, crypto, índices, forex, ETFs
+2. **Diversificado**: Acciones, crypto, índices, ETFs
 3. **Histórico extenso**: Años de datos disponibles
 4. **Caché automático**: Las consultas repetidas son instantáneas
 5. **Fácil de usar**: Interfaz simple y clara
@@ -159,7 +160,8 @@ dotnet run --project Examples/HermesTrade.Example/HermesTrade.Example.csproj
 
 ## ⚠️ Limitaciones
 
-- Solo soporta intervalos diarios, semanales y mensuales (no intradiarios)
+- Solo soporta velas diarias (no semanales, mensuales ni intradiarias)
+- No soporta forex (EURUSD=X)
 - Rate limits no documentados (usa caché para mitigar)
 - Algunos símbolos pueden no estar disponibles
 - Datos de mercados cerrados en fines de semana/festivos

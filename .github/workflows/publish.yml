@@ -20,17 +20,20 @@ jobs:
       - name: Restore
         run: dotnet restore HermesTrade/HermesTrade.sln
 
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      # Version also sets AssemblyVersion/FileVersion, so the DLL matches the package
       - name: Build
-        run: dotnet build HermesTrade/HermesTrade.csproj --configuration Release --no-restore
+        run: dotnet build HermesTrade/HermesTrade.csproj --configuration Release --no-restore -p:Version=$VERSION
 
       - name: Pack
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           dotnet pack HermesTrade/HermesTrade.csproj \
             --configuration Release \
             --no-build \
             --output ./nupkg \
-            -p:PackageVersion=$VERSION
+            -p:Version=$VERSION
 
       - name: Push to NuGet.org
         run: |
