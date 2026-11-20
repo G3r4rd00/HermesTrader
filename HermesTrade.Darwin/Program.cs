@@ -15,6 +15,7 @@ var engine = MarketData.CreateEngine(cacheDir);
 var fitness = new FitnessSettings
 {
     WeightDecay = opts.GetDouble("decay", 0.01),
+    MinTradesPerYear = opts.GetDouble("min-trades", 3),
 };
 var evaluator = new Evaluator(engine, fitness);
 
@@ -49,7 +50,7 @@ async Task RunCommand()
                 HermesTrade.Darwin — estrategias de trading evolucionadas con DarwinGA
                 Sin argumentos se abre un menú interactivo.
 
-                  evolve     [--generations 120] [--islands 4] [--pop 50] [--hidden 6] [--seed 2026] [--model models/champion.json]
+                  evolve     [--generations 120] [--islands 4] [--pop 50] [--hidden 6] [--seed 2026] [--min-trades 3] [--model models/champion.json]
                              Evoluciona la red con TRAIN, elige el campeón con VALIDATION y lo guarda. No carga datos de TEST.
                   report     [--model ...]   Informe final: campeón vs. referencias en TRAIN, VALIDATION y TEST (+ símbolos nunca vistos).
                   test       --symbol NVDA [--from 2024-01-01] [--to 2025-06-30] [--fees 0.001] [--model ...]

@@ -72,6 +72,12 @@ public sealed record FitnessSettings
     /// <summary>Trades per symbol-year allowed before an extra penalty.</summary>
     public double MaxTradesPerYear { get; init; } = 12;
 
+    /// <summary>Minimum average trades per symbol-year before the under-trading penalty kicks in.</summary>
+    public double MinTradesPerYear { get; init; } = 3;
+
+    /// <summary>Penalty weight applied for each missing trade below <see cref="MinTradesPerYear"/>.</summary>
+    public double MinTradesPenalty { get; init; } = 0.04;
+
     /// <summary>Minimum average exposure before the "always in cash" penalty kicks in.</summary>
     public double MinExposure { get; init; } = 0.0;
 }

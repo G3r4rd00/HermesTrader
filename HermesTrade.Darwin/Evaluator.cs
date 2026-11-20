@@ -68,7 +68,7 @@ public sealed class Evaluator(BacktestEngine engine, FitnessSettings fitness)
     /// <item>u = v + κ·(ln(1+R) − ln(1+R_buy&amp;hold)) / σ_asset: staying out of a rally costs,
     ///       dodging a crash pays;</item>
     /// <item>score = mean(u) + w · CVaR(worst q of u): the tail term punishes the bad years explicitly;</item>
-    /// <item>minus penalties for over-trading and for hiding in cash.</item>
+    /// <item>minus penalties for over-trading, under-trading and for hiding in cash.</item>
     /// </list>
     /// </summary>
     public double Score(IReadOnlyList<YearStats> years)
@@ -101,6 +101,7 @@ public sealed class Evaluator(BacktestEngine engine, FitnessSettings fitness)
         return u.Average()
                + Fitness.TailWeight * tail
                - Math.Max(0, trades - Fitness.MaxTradesPerYear) * 0.02
+               - Math.Max(0, Fitness.MinTradesPerYear - trades) * Fitness.MinTradesPenalty
                - Math.Max(0, Fitness.MinExposure - exposure) * 2;
     }
 
